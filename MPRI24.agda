@@ -94,10 +94,10 @@ module CBV-SOS where
 
   -- good luck with that one...
   data Diverges (t : Term) : Set where
-    step : ∀ t' → (t ⟶ t') → Diverges t' → Diverges t
+    step : ∀ {t'} → (t ⟶ t') → Diverges t' → Diverges t
 
   data Error (t : Term) : Set where
-    stuck : (∀ t' → ¬(t ⟶ t')) → ¬(Value t) → Error t
+    stuck : (∀ {t'} → ¬(t ⟶ t')) → ¬(Value t) → Error t
     step : ∀ {t'} → (t ⟶ t') → Error t' → Error t
 
   terminating : Terminates (
@@ -113,7 +113,17 @@ module CBV-SOS where
     step (β "x" (V "x") (VC 1)) (
     done (VC 1)))))
 
+  ¬C$C : ∀ {t} → ¬(C 2 $ C 2 ⟶ t)
+  ¬C$C (⟶$ .(C 2) ())
+  ¬C$C ($⟶ y ())
+
   error : Error ((ƛ "x" (V "x" $ V "x")) $ C 2)
   error = step
     (β "x" (V "x" $ V "x") (VC 2))
-    (stuck {!!} {!!})
+    (stuck stuck1 (λ ()))
+    where
+      stuck1 : ∀ {t} → ¬(C 2 $ C 2 ⟶ t)
+      stuck1 (⟶$ .(C 2) ())
+      stuck1 ($⟶ y ())
+
+  
