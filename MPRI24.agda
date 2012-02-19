@@ -8,93 +8,112 @@ open import Relation.Nullary
 
 module CBV-SOS where
 
-  infixl 2 _$_
-  infix 1 _⟶_
-
   Var : Set
   Var = String
 
+  infixl 2 _$_
   data Term : Set where
     C : (n : ℕ) → Term
     V : (x : Var) → Term
-    ƛ_↦_ : (x : Var) → (e : Term) → Term
+    ƛ : (x : Var) → (e : Term) → Term
     _$_ : (f : Term) → (g : Term) → Term
 
-  data Value : Term -> Set where
+  data Value : Term → Set where
     VC : ∀ n → Value (C n)
-    Vƛ : ∀ x a → Value (ƛ x ↦ a)
+    Vƛ : ∀ x a → Value (ƛ x a)
 
-  _[_←_] : Term → Var → Term → Term
-  C n [ x ← v ] = C n
-  V x [ x' ← v ] with x ≟ x'
-  V .x' [ x' ← v ] | yes refl = v
-  V x [ x' ← v ] | no ¬p = V x
-  (ƛ x ↦ e) [ x' ← v ] with x ≟ x'
-  (ƛ .x' ↦ e) [ x' ← v ] | yes refl = ƛ x' ↦ e
-  (ƛ x ↦ e) [ x' ← v ] | no ¬p = ƛ x ↦ (e [ x' ← v ])
-  (f $ g) [ x ← v ] = f [ x ← v ] $ g [ x ← v ]
+  _[_←_] : ∀ {v} → Term → Var → Value v → Term
+  C n [ x ← v' ] = C n
+  V x [ x' ← v' ] with x ≟ x'
+  V .x' [ x' ← VC n ] | yes refl = C n
+  V .x' [ x' ← Vƛ x a ] | yes refl = ƛ x a
+  V x [ x' ← v' ] | no ¬p = V x
+  (ƛ x e) [ x' ← v' ] with x ≟ x'
+  (ƛ .x' e) [ x' ← v' ] | yes refl = ƛ x' e
+  (ƛ x e) [ x' ← v' ] | no ¬p = ƛ x (e [ x' ← v' ])
+  (f $ g) [ x ← v' ] = f [ x ← v' ] $ g [ x ← v' ]
 
+  infix 1 _⟶_
   data _⟶_ : Term → Term → Set where
-    β : ∀ x a v → Value v → (ƛ x ↦ a) $ v ⟶ a [ x ← v ]
-    ⟶$ : ∀ {a a'} b → a ⟶ a' → a $ b ⟶ a' $ b
-    $⟶ : ∀ {b b'} v → Value v → b ⟶ b' → v $ b ⟶ v $ b'
+    β : ∀ x a {v} → (vv : Value v)         → (ƛ x a) $ v ⟶ a [ x ← vv ]
+    ⟶$ : ∀ {a a'} b → a ⟶ a'             →         a $ b ⟶ a' $ b
+    $⟶ : ∀ {b b' v} → Value v → (b ⟶ b') →         v $ b ⟶ v $ b'
 
   reduction-example :
-    (ƛ "x" ↦ ƛ "y" ↦ (V "y" $ V "x")) $ ((ƛ "x" ↦ V "x") $ C 1) $ (ƛ "x" ↦ V "x")
+    (ƛ "x" (ƛ "y" (V "y" $ V "x"))) $ ((ƛ "x" (V "x")) $ C 1) $ (ƛ "x" (V "x"))
     ⟶
-    (ƛ "x" ↦ ƛ "y" ↦ (V "y" $ V "x")) $ C 1 $ (ƛ "x" ↦ V "x")
+    (ƛ "x" (ƛ "y" (V "y" $ V "x"))) $ C 1 $ (ƛ "x" (V "x"))
   reduction-example =
-    ⟶$ (ƛ "x" ↦ V "x")
-    ($⟶ (ƛ "x" ↦ ƛ "y" ↦ (V "y" $ V "x")) (Vƛ "x" (ƛ "y" ↦ (V "y" $ V "x")))
-    (β "x" (V "x") (C 1) (VC 1)))
+    ⟶$ (ƛ "x" (V "x"))
+    ($⟶ (Vƛ "x" (ƛ "y" (V "y" $ V "x")))
+    (β "x" (V "x") (VC 1)))
 
-  ¬Value⟶ : ∀ v t → Value v → ¬(v ⟶ t)
-  ¬Value⟶ .(C n) t (VC n) ()
-  ¬Value⟶ .(ƛ x ↦ a) t (Vƛ x a) ()
+  ¬Value⟶ : ∀ {v t} → Value v → ¬(v ⟶ t)
+  ¬Value⟶ {.(C n)} {t} (VC n) ()
+  ¬Value⟶ {.(ƛ x a)} {t} (Vƛ x a) ()
 
-  ¬ƛ⟶ : ∀ x e t → ¬((ƛ x ↦ e) ⟶ t)
-  ¬ƛ⟶ x e t ()
+  -- just a special case of ¬Value⟶
+  weak-reduction : ∀ x e t → ¬((ƛ x e) ⟶ t)
+  weak-reduction x e t ()
 
-  {- dafuq did I just write?
-  weak-reduction : ∀ a a' x → ¬(a ⟶ a' → (ƛ x ↦ a) ⟶ (ƛ x ↦ a'))
-  weak-reduction (C n) a' x f = {!!}
-  weak-reduction (V x) a' x' f = {!!}
-  weak-reduction (ƛ x ↦ e) a' x' f = {!!}
-  weak-reduction (f $ g) a' x f' = {!!}
+  {-
+  By construction, β-reduction only happens once the argument has been fully
+  reduced to a value.
   -}
+  call-by-value : ∀ x a v → (vv : Value v) →
+    ((ƛ x a) $ v ⟶ a [ x ← vv ]) → Value v
+  call-by-value x a v vv red = vv
 
-  {- 1AM, I have no idea what I'm doing! -}
-  call-by-value : ∀ x a e v t → (ƛ x ↦ a) $ e ⟶ t → e ⟶ v → Value v
-  call-by-value x a
-    .(ƛ x' ↦ a' $ v)
-    .(a' [ x' ← v ])
-    .(a [ x ← ƛ x' ↦ a' $ v ])
-    (β .x .a .(ƛ x' ↦ a' $ v) ())
-    (β x' a' v y')
-  call-by-value x a
-    .(ƛ x' ↦ a0 $ v)
-    .(a0 [ x' ← v ])
-    .(a' $ (ƛ x' ↦ a0 $ v))
-    (⟶$ {.(ƛ x ↦ a)} {a'} .(ƛ x' ↦ a0 $ v) ())
-    (β x' a0 v y')
-  call-by-value x a
-    .(ƛ x' ↦ a' $ v)
-    .(a' [ x' ← v ])
-    .(ƛ x ↦ a $ b')
-    ($⟶ {.(ƛ x' ↦ a' $ v)} {b'} .(ƛ x ↦ a) y y')
-    (β x' a' v y0)
-    = {!!}
-  call-by-value x a
-    .(a' $ b)
-    .(a0 $ b)
-    t
-    red1
-    (⟶$ {a'} {a0} b y)
-    = {!!}
-  call-by-value x a
-    .(v $ b)
-    .(v $ b')
-    t
-    red1
-    ($⟶ {b} {b'} v y y')
-    = {!!}
+  left-to-right : ∀ v b b' → b ≢ b' → (b ⟶ b') → (v $ b ⟶ v $ b') → Value v
+  left-to-right (C n) b b' b≢b' red1 red2 = VC n
+  left-to-right (V x) .b' b' b≢b' red1 (⟶$ .b' ())
+  left-to-right (V x) b b' b≢b' red1 ($⟶ () y')
+  left-to-right (ƛ x e) b b' b≢b' red1 red2 = Vƛ x e
+  left-to-right (f $ g) .b' b' b≢b' red1 (⟶$ .b' y) = ⊥-elim (b≢b' refl)
+  left-to-right (f $ g) b b' b≢b' red1 ($⟶ () y')
+
+  deterministic : ∀ {a b c} → (a ⟶ b) → (a ⟶ c) → b ≡ c
+  deterministic {C n} () a⟶c
+  deterministic {V x} () a⟶c
+  deterministic {ƛ x e} () a⟶c
+  deterministic {.(ƛ x a) $ .(C n)} (β x a (VC n)) (β .x .a (VC .n)) = refl
+  deterministic {.(ƛ x a) $ .(ƛ x' a')} (β x a (Vƛ x' a')) (β .x .a (Vƛ .x' .a'))
+    = refl
+  deterministic {.(ƛ x a) $ g} (β x a vv) (⟶$ .g ())
+  deterministic {.(ƛ x a) $ g} (β x a vv) ($⟶ y y') = ⊥-elim (¬Value⟶ vv y')
+  deterministic {.(ƛ x a) $ g} (⟶$ .g ()) (β x a vv)
+  deterministic {f $ g} (⟶$ .g y) (⟶$ .g y') rewrite deterministic y y' = refl
+  deterministic {f $ g} (⟶$ .g y) ($⟶ y' y0) = ⊥-elim (¬Value⟶ y' y)
+  deterministic {.(ƛ x a) $ g} ($⟶ y y') (β x a vv) = ⊥-elim (¬Value⟶ vv y')
+  deterministic {f $ g} ($⟶ y y') (⟶$ .g y0) = ⊥-elim (¬Value⟶ y y0)
+  deterministic {f $ g} ($⟶ y y') ($⟶ y0 y1) rewrite deterministic y1 y' = refl
+
+  data Terminates (t : Term) : Set where
+    done : Value t → Terminates t
+    step : ∀ {t'} → (t ⟶ t') → Terminates t' → Terminates t
+
+  -- good luck with that one...
+  data Diverges (t : Term) : Set where
+    step : ∀ t' → (t ⟶ t') → Diverges t' → Diverges t
+
+  data Error (t : Term) : Set where
+    stuck : (∀ t' → ¬(t ⟶ t')) → ¬(Value t) → Error t
+    step : ∀ {t'} → (t ⟶ t') → Error t' → Error t
+
+  terminating : Terminates (
+      (ƛ "x" (ƛ "y" (V "y" $ V "x"))) $
+      ((ƛ "x" (V "x")) $ C 1) $
+      (ƛ "x" (V "x"))
+    )
+  terminating =
+    step (⟶$ (ƛ "x" (V "x")) ($⟶ (Vƛ "x" (ƛ "y" (V "y" $ V "x")))
+      (β "x" (V "x") (VC 1)))) (
+    step (⟶$ (ƛ "x" (V "x")) (β "x" (ƛ "y" (V "y" $ V "x")) (VC 1))) (
+    step (β "y" (V "y" $ C 1) (Vƛ "x" (V "x"))) (
+    step (β "x" (V "x") (VC 1)) (
+    done (VC 1)))))
+
+  error : Error ((ƛ "x" (V "x" $ V "x")) $ C 2)
+  error = step
+    (β "x" (V "x" $ V "x") (VC 2))
+    (stuck {!!} {!!})
