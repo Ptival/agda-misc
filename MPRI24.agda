@@ -182,30 +182,40 @@ module CBV-ReductionContext where
 
   open import Data.Product using (_×_; _,_)
 
-  unique-decomposition : ∀ {a E1 b1 t1 E2 b2 t2} →
+  ¬Value[ƛ$] : ∀ {E x a t} → ¬ (Value (E [ ƛ x a $ t ]))
+  ¬Value[ƛ$] {[]} ()
+  ¬Value[ƛ$] {< E > b} ()
+  ¬Value[ƛ$] {VC n < E >} ()
+  ¬Value[ƛ$] {Vƛ x a < E >} ()
+
+  unique' : ∀ E1 x a g E2 x' a' g' →
+    (E1 [ ƛ x a $ g ] ≡ E2 [ ƛ x' a' $ g' ]) → Value g → Value g' →
+    (E1 ≡ E2) × ((ƛ x a $ g) ≡ (ƛ x' a' $ g'))
+  unique' [] .x' .a' .g' [] x' a' g' refl vg vg' = refl , refl
+  unique' [] x a g (< E > b) x' a' g' eq vg vg' = {!!}
+  unique' [] x a g (VC n < E >) x' a' g' () vg vg'
+  unique' [] .x' .a' .(E [ ƛ x0 a0 $ g' ]) (Vƛ x' a' < E >) x0 a0 g' refl vg vg' = ⊥-elim (¬Value[ƛ$] {E} vg)
+  unique' (< E > b) x a g [] x' a' g' eq vg vg' = {!!}
+  unique' (< E > b) x a g (< E' > b') x' a' g' eq vg vg' = {!!}
+  unique' (< E > b) x a g (VC n < E' >) x' a' g' eq vg vg' = {!!}
+  unique' (< E > b) x a g (Vƛ x' a' < E' >) x0 a0 g' eq vg vg' = {!!}
+  unique' (VC n < E >) x a g [] x' a' g' () vg vg'
+  unique' (Vƛ .x0 .a0 < E >) x' a' g [] x0 a0 .(E [ ƛ x' a' $ g ]) refl vg vg' = {!!}
+  unique' (VC n < E >) x a g (< E' > b) x' a' g' eq vg vg' = {!!}
+  unique' (Vƛ x a < E >) x' a' g (< E' > b) x0 a0 g' eq vg vg' = {!!}
+  unique' (VC n < E >) x a g (VC n' < E' >) x' a' g' eq vg vg' = {!eq!}
+  unique' (VC n < E >) x a g (Vƛ x' a' < E' >) x0 a0 g' () vg vg'
+  unique' (Vƛ x a < E >) x' a' g (VC n < E' >) x0 a0 g' () vg vg'
+  unique' (Vƛ x a < E >) x' a' g (Vƛ x0 a0 < E' >) x1 a1 g' eq vg vg' = {!!}
+
+  unique-decomposition : ∀ a E1 b1 t1 E2 b2 t2 →
     (a ≡ E1 [ b1 ]) → (a ≡ E2 [ b2 ]) →
     (b1 ⟶ε t1) → (b2 ⟶ε t2) →
     (E1 ≡ E2) × (b1 ≡ b2)
-  unique-decomposition {C n} {[]} refl a≡2 () b2⟶
-  unique-decomposition {C n} {< E > b} () a≡2 b1⟶ b2⟶
-  unique-decomposition {C n} {VC n' < E >} () a≡2 b1⟶ b2⟶
-  unique-decomposition {C n} {Vƛ x a < E >} () a≡2 b1⟶ b2⟶
-  unique-decomposition {V x} {[]} refl a≡2 () b2⟶
-  unique-decomposition {V x} {< E > b} () a≡2 b1⟶ b2⟶
-  unique-decomposition {V x} {VC n < E >} () a≡2 b1⟶ b2⟶
-  unique-decomposition {V x} {Vƛ x' a < E >} () a≡2 b1⟶ b2⟶
-  unique-decomposition {ƛ x e} {[]} refl a≡2 () b2⟶
-  unique-decomposition {ƛ x e} {< E > b} () a≡2 b1⟶ b2⟶
-  unique-decomposition {ƛ x e} {VC n < E >} () a≡2 b1⟶ b2⟶
-  unique-decomposition {ƛ x e} {Vƛ x' a < E >} () a≡2 b1⟶ b2⟶
-  unique-decomposition {f $ g} {[]} {C n} () a≡2 b1⟶ b2⟶
-  unique-decomposition {f $ g} {[]} {V x} () a≡2 b1⟶ b2⟶
-  unique-decomposition {f $ g} {[]} {ƛ x e} () a≡2 b1⟶ b2⟶
-  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {[]} {C n} refl () b1⟶ b2⟶
-  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {[]} {V x} refl () b1⟶ b2⟶
-  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {[]} {ƛ x e} refl () b1⟶ b2⟶
-  unique-decomposition {.f $ .g} {[]} {.f $ .g} {t1} {[]} {f $ g} refl refl b1⟶ b2⟶ = refl , refl
-  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {< E > b} refl a≡2 b1⟶ b2⟶ = {!!}
-  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {vv < E >} refl a≡2 b1⟶ b2⟶ = {!!}
-  unique-decomposition {f $ g} {< E > b} a≡1 a≡2 b1⟶ b2⟶ = {!!}
-  unique-decomposition {f $ g} {vv < E >} a≡1 a≡2 b1⟶ b2⟶ = {!!}
+  unique-decomposition a E1 (C n) t1 E2 b2 t2 a1 a2 () b2t2
+  unique-decomposition a E1 (V x) t1 E2 b2 t2 a1 a2 () b2t2
+  unique-decomposition a E1 (ƛ x e) t1 E2 b2 t2 a1 a2 () b2t2
+  unique-decomposition a E1 (f $ g) t1 E2 (C n) t2 a1 a2 b1t1 ()
+  unique-decomposition a E1 (f $ g) t1 E2 (V x) t2 a1 a2 b1t1 ()
+  unique-decomposition a E1 (f $ g) t1 E2 (ƛ x e) t2 a1 a2 b1t1 ()
+  unique-decomposition .(E1 [ ƛ x a $ g ]) E1 (.(ƛ x a) $ g) .(a [ x ← vv ]) E2 (.(ƛ x' a') $ g') .(a' [ x' ← vv' ]) refl a2 (β {x} {a} vv) (β {x'} {a'} vv') = {!!}
