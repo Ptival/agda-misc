@@ -1,10 +1,10 @@
 module MPRI24 where
 
-open import Data.Empty
+open import Data.Empty using (⊥-elim)
 open import Data.Nat using (ℕ)
-open import Data.String
-open import Relation.Binary.PropositionalEquality
-open import Relation.Nullary
+open import Data.String using (String; _≟_)
+open import Relation.Binary.PropositionalEquality using (refl; _≡_; _≢_)
+open import Relation.Nullary using (¬_; yes; no)
 
 module CBV-SOS where
 
@@ -126,4 +126,86 @@ module CBV-SOS where
       stuck1 (⟶$ .(C 2) ())
       stuck1 ($⟶ y ())
 
-  
+  {- Not valid:
+  diverges : Diverges ((ƛ "x" (V "x" $ V "x")) $ (ƛ "x" (V "x" $ V "x")))
+  diverges = step (β "x" (V "x" $ V "x") (Vƛ "x" (V "x" $ V "x"))) diverges
+  -}
+
+module CBV-ReductionContext where
+
+  Var : Set
+  Var = String
+
+  infixl 2 _$_
+  data Term : Set where
+    C : (n : ℕ) → Term
+    V : (x : Var) → Term
+    ƛ : (x : Var) → (e : Term) → Term
+    _$_ : (f : Term) → (g : Term) → Term
+
+  data Value : Term → Set where
+    VC : ∀ n → Value (C n)
+    Vƛ : ∀ x a → Value (ƛ x a)
+
+  _[_←_] : ∀ {v} → Term → Var → Value v → Term
+  C n [ x ← v' ] = C n
+  V x [ x' ← v' ] with x ≟ x'
+  V .x' [ x' ← VC n ] | yes refl = C n
+  V .x' [ x' ← Vƛ x a ] | yes refl = ƛ x a
+  V x [ x' ← v' ] | no ¬p = V x
+  (ƛ x e) [ x' ← v' ] with x ≟ x'
+  (ƛ .x' e) [ x' ← v' ] | yes refl = ƛ x' e
+  (ƛ x e) [ x' ← v' ] | no ¬p = ƛ x (e [ x' ← v' ])
+  (f $ g) [ x ← v' ] = f [ x ← v' ] $ g [ x ← v' ]
+
+  infix 1 _⟶ε_
+  data _⟶ε_ : Term → Term → Set where
+    β : ∀ {x a v} → (vv : Value v) → (ƛ x a) $ v ⟶ε a [ x ← vv ]
+
+  data Context : Set where
+    [] : Context
+    <_>_ : (E : Context) → (b : Term) → Context
+    _<_> : {v : Term} → (vv : Value v) → (E : Context) → Context
+
+  _[_] : Context → Term → Term
+  [] [ a ] = a
+  (< E > b) [ a ] =  E [ a ] $ b
+  (VC n < E >) [ a ] = C n $ E [ a ]
+  (Vƛ x a < E >) [ a' ] = ƛ x a $ E [ a' ]
+
+  infix 1 _⟶_
+  data _⟶_ : Term → Term → Set where
+    context : ∀ { a a' E } → (a ⟶ε a') → (E [ a ] ⟶ E [ a' ])
+
+  red1 : (ƛ "x" (V "x") $ C 1) ⟶ C 1
+  red1 = context {ƛ "x" (V "x") $ C 1} {C 1} {[]} (β (VC 1))
+
+  open import Data.Product using (_×_; _,_)
+
+  unique-decomposition : ∀ {a E1 b1 t1 E2 b2 t2} →
+    (a ≡ E1 [ b1 ]) → (a ≡ E2 [ b2 ]) →
+    (b1 ⟶ε t1) → (b2 ⟶ε t2) →
+    (E1 ≡ E2) × (b1 ≡ b2)
+  unique-decomposition {C n} {[]} refl a≡2 () b2⟶
+  unique-decomposition {C n} {< E > b} () a≡2 b1⟶ b2⟶
+  unique-decomposition {C n} {VC n' < E >} () a≡2 b1⟶ b2⟶
+  unique-decomposition {C n} {Vƛ x a < E >} () a≡2 b1⟶ b2⟶
+  unique-decomposition {V x} {[]} refl a≡2 () b2⟶
+  unique-decomposition {V x} {< E > b} () a≡2 b1⟶ b2⟶
+  unique-decomposition {V x} {VC n < E >} () a≡2 b1⟶ b2⟶
+  unique-decomposition {V x} {Vƛ x' a < E >} () a≡2 b1⟶ b2⟶
+  unique-decomposition {ƛ x e} {[]} refl a≡2 () b2⟶
+  unique-decomposition {ƛ x e} {< E > b} () a≡2 b1⟶ b2⟶
+  unique-decomposition {ƛ x e} {VC n < E >} () a≡2 b1⟶ b2⟶
+  unique-decomposition {ƛ x e} {Vƛ x' a < E >} () a≡2 b1⟶ b2⟶
+  unique-decomposition {f $ g} {[]} {C n} () a≡2 b1⟶ b2⟶
+  unique-decomposition {f $ g} {[]} {V x} () a≡2 b1⟶ b2⟶
+  unique-decomposition {f $ g} {[]} {ƛ x e} () a≡2 b1⟶ b2⟶
+  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {[]} {C n} refl () b1⟶ b2⟶
+  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {[]} {V x} refl () b1⟶ b2⟶
+  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {[]} {ƛ x e} refl () b1⟶ b2⟶
+  unique-decomposition {.f $ .g} {[]} {.f $ .g} {t1} {[]} {f $ g} refl refl b1⟶ b2⟶ = refl , refl
+  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {< E > b} refl a≡2 b1⟶ b2⟶ = {!!}
+  unique-decomposition {.f' $ .g'} {[]} {f' $ g'} {t1} {vv < E >} refl a≡2 b1⟶ b2⟶ = {!!}
+  unique-decomposition {f $ g} {< E > b} a≡1 a≡2 b1⟶ b2⟶ = {!!}
+  unique-decomposition {f $ g} {vv < E >} a≡1 a≡2 b1⟶ b2⟶ = {!!}
