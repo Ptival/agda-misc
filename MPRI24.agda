@@ -203,46 +203,68 @@ module CBV-ReductionContext where
   ¬C≡[$] (VC n' < E >) ()
   ¬C≡[$] (Vƛ x' a' < E >) ()
 
-  [ƛ$]≡[ƛ$] : ∀ {x a g x' a' g'} E E' → Value g → Value g' →
+  [ƛ$]≡[ƛ$]' : ∀ {x a g x' a' g'} E E' → Value g → Value g' →
     E [ ƛ x a $ g ] ≡ E' [ ƛ x' a' $ g' ] → (E ≡ E')
-  [ƛ$]≡[ƛ$] [] [] vg vg' eq = refl
-  [ƛ$]≡[ƛ$] [] (< E > b) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] [] (< E > b) vg vg' eq | proj₁ , refl
+  [ƛ$]≡[ƛ$]' [] [] vg vg' eq = refl
+  [ƛ$]≡[ƛ$]' [] (< E > b) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' [] (< E > b) vg vg' eq | proj₁ , refl
     = ⊥-elim (¬ƛ≡[$] E proj₁)
-  [ƛ$]≡[ƛ$] [] (VC n < E >) vg vg' ()
-  [ƛ$]≡[ƛ$] [] (Vƛ x0 a0 < E >) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] [] (Vƛ x0 a0 < E >) vg vg' eq | proj₁ , refl
+  [ƛ$]≡[ƛ$]' [] (VC n < E >) vg vg' ()
+  [ƛ$]≡[ƛ$]' [] (Vƛ x0 a0 < E >) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' [] (Vƛ x0 a0 < E >) vg vg' eq | proj₁ , refl
     = ⊥-elim (¬Value[$] E vg)
-  [ƛ$]≡[ƛ$] (< E > b) [] vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] {x} {a} {g} {x'} {a'} {g'} (< E > .g') [] vg vg' eq | proj₁ , refl
+  [ƛ$]≡[ƛ$]' (< E > b) [] vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' {x} {a} {g} {x'} {a'} {g'} (< E > .g') [] vg vg' eq | proj₁ , refl
     = ⊥-elim (¬ƛ≡[$] E (sym proj₁))
-  [ƛ$]≡[ƛ$] (< E > b) (< E' > b') vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] (< E > .b') (< E' > b') vg vg' eq | proj₁ , refl
-    rewrite [ƛ$]≡[ƛ$] E E' vg vg' proj₁
+  [ƛ$]≡[ƛ$]' (< E > b) (< E' > b') vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' (< E > .b') (< E' > b') vg vg' eq | proj₁ , refl
+    rewrite [ƛ$]≡[ƛ$]' E E' vg vg' proj₁
     = refl
-  [ƛ$]≡[ƛ$] (< E > b) (VC n < E' >) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] (< E > b) (VC n < E' >) vg vg' eq | proj₁ , proj₂
+  [ƛ$]≡[ƛ$]' (< E > b) (VC n < E' >) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' (< E > b) (VC n < E' >) vg vg' eq | proj₁ , proj₂
     = ⊥-elim (¬C≡[$] E (sym proj₁))
-  [ƛ$]≡[ƛ$] (< E > b) (Vƛ x0 a0 < E' >) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] (< E > b) (Vƛ x0 a0 < E' >) vg vg' eq | proj₁ , proj₂
+  [ƛ$]≡[ƛ$]' (< E > b) (Vƛ x0 a0 < E' >) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' (< E > b) (Vƛ x0 a0 < E' >) vg vg' eq | proj₁ , proj₂
     = ⊥-elim (¬ƛ≡[$] E (sym proj₁))
-  [ƛ$]≡[ƛ$] (VC n < E >) [] vg vg' ()
-  [ƛ$]≡[ƛ$] {x} {a} {g} {x'} {a'} (Vƛ .x' .a' < E >) [] vg vg' refl
+  [ƛ$]≡[ƛ$]' (VC n < E >) [] vg vg' ()
+  [ƛ$]≡[ƛ$]' {x} {a} {g} {x'} {a'} (Vƛ .x' .a' < E >) [] vg vg' refl
     = ⊥-elim (¬Value[$] E vg')
-  [ƛ$]≡[ƛ$] (VC n < E >) (< E' > b) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] (VC n < E >) (< E' > b) vg vg' eq | proj₁ , proj₂
+  [ƛ$]≡[ƛ$]' (VC n < E >) (< E' > b) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' (VC n < E >) (< E' > b) vg vg' eq | proj₁ , proj₂
     = ⊥-elim (¬C≡[$] E' proj₁)
-  [ƛ$]≡[ƛ$] (Vƛ x0 a0 < E >) (< E' > b) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] (Vƛ x0 a0 < E >) (< E' > b) vg vg' eq | proj₁ , proj₂
+  [ƛ$]≡[ƛ$]' (Vƛ x0 a0 < E >) (< E' > b) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' (Vƛ x0 a0 < E >) (< E' > b) vg vg' eq | proj₁ , proj₂
     = ⊥-elim (¬ƛ≡[$] E' proj₁)
-  [ƛ$]≡[ƛ$] (VC n < E >) (VC n' < E' >) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] (VC .n' < E >) (VC n' < E' >) vg vg' eq | refl , proj₂
-    rewrite [ƛ$]≡[ƛ$] E E' vg vg' proj₂ = refl
-  [ƛ$]≡[ƛ$] (VC n < E >) (Vƛ x0 a0 < E' >) vg vg' ()
-  [ƛ$]≡[ƛ$] (Vƛ x0 a0 < E >) (VC n < E' >) vg vg' ()
-  [ƛ$]≡[ƛ$] (Vƛ x0 a0 < E >) (Vƛ x1 a1 < E' >) vg vg' eq with $≡$ eq
-  [ƛ$]≡[ƛ$] (Vƛ .x1 .a1 < E >) (Vƛ x1 a1 < E' >) vg vg' eq | refl , proj₂
-    rewrite [ƛ$]≡[ƛ$] E E' vg vg' proj₂ = refl
+  [ƛ$]≡[ƛ$]' (VC n < E >) (VC n' < E' >) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' (VC .n' < E >) (VC n' < E' >) vg vg' eq | refl , proj₂
+    rewrite [ƛ$]≡[ƛ$]' E E' vg vg' proj₂ = refl
+  [ƛ$]≡[ƛ$]' (VC n < E >) (Vƛ x0 a0 < E' >) vg vg' ()
+  [ƛ$]≡[ƛ$]' (Vƛ x0 a0 < E >) (VC n < E' >) vg vg' ()
+  [ƛ$]≡[ƛ$]' (Vƛ x0 a0 < E >) (Vƛ x1 a1 < E' >) vg vg' eq with $≡$ eq
+  [ƛ$]≡[ƛ$]' (Vƛ .x1 .a1 < E >) (Vƛ x1 a1 < E' >) vg vg' eq | refl , proj₂
+    rewrite [ƛ$]≡[ƛ$]' E E' vg vg' proj₂ = refl
+
+  [ƛ$]≡[ƛ$] : ∀ {x a g x' a' g'} E E' → Value g → Value g' →
+    E [ ƛ x a $ g ] ≡ E' [ ƛ x' a' $ g' ] →
+    (E ≡ E') × (x ≡ x') × (a ≡ a') × (g ≡ g')
+  [ƛ$]≡[ƛ$] E E' vg vg' eq with [ƛ$]≡[ƛ$]' E E' vg vg' eq
+  [ƛ$]≡[ƛ$] .[] [] vg vg' eq | refl with $≡$ eq
+  [ƛ$]≡[ƛ$] .[] [] vg vg' eq | refl | refl , refl = refl , refl , refl , refl
+  [ƛ$]≡[ƛ$] .(< E > b) (< E > b) vg vg' eq | refl with $≡$ eq
+  [ƛ$]≡[ƛ$] .(< E > b) (< E > b) vg vg' eq | refl | proj₁ , refl
+    with [ƛ$]≡[ƛ$] E E vg vg' proj₁
+  [ƛ$]≡[ƛ$] .(< E > b) (< E > b) vg vg' eq | refl | proj₁ , refl
+    | proj₁' , proj₂ = refl , proj₂
+  [ƛ$]≡[ƛ$] .(VC n < E >) (VC n < E >) vg vg' eq | refl with $≡$ eq
+  [ƛ$]≡[ƛ$] .(VC n < E >) (VC n < E >) vg vg' eq | refl | proj₁ , proj₂
+    with [ƛ$]≡[ƛ$] E E vg vg' proj₂
+  [ƛ$]≡[ƛ$] .(VC n < E >) (VC n < E >) vg vg' eq | refl | proj₁' , proj₂
+    | proj₁ , proj₂' = refl , proj₂'
+  [ƛ$]≡[ƛ$] .(Vƛ x0 a0 < E >) (Vƛ x0 a0 < E >) vg vg' eq | refl with $≡$ eq
+  [ƛ$]≡[ƛ$] .(Vƛ x0 a0 < E >) (Vƛ x0 a0 < E >) vg vg' eq | refl | proj₁ , proj₂
+    with [ƛ$]≡[ƛ$] E E vg vg' proj₂
+  [ƛ$]≡[ƛ$] .(Vƛ x0 a0 < E >) (Vƛ x0 a0 < E >) vg vg' eq | refl
+    | proj₁' , proj₂ | proj₁ , proj₂' = refl , proj₂'
 
   unique' : ∀ E1 x a g E2 x' a' g' →
     (E1 [ ƛ x a $ g ] ≡ E2 [ ƛ x' a' $ g' ]) → Value g → Value g' →
@@ -258,7 +280,9 @@ module CBV-ReductionContext where
   unique' (< E > .g') x a g [] x' a' g' eq vg vg' | proj₁ , refl
     = ⊥-elim (¬ƛ≡[$] E (sym proj₁))
   unique' (< E > b) x a g (< E' > b') x' a' g' eq vg vg' with $≡$ eq
-  unique' (< E > .b') x a g (< E' > b') x' a' g' eq vg vg' | proj₁ , refl = {!!}
+  unique' (< E > .b') x a g (< E' > b') x' a' g' eq vg vg' | proj₁ , refl
+    with [ƛ$]≡[ƛ$] E E' vg vg' proj₁
+  unique' (< .E' > .b') .x' .a' .g' (< E' > b') x' a' g' eq vg vg' | proj₁ , refl | refl , refl , refl , refl = refl , refl
   unique' (< E > b) x a g (VC n < E' >) x' a' g' eq vg vg' = {!!}
   unique' (< E > b) x a g (Vƛ x' a' < E' >) x0 a0 g' eq vg vg' = {!!}
   unique' (VC n < E >) x a g [] x' a' g' () vg vg'
