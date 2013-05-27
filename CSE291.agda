@@ -5,6 +5,8 @@ open import Data.Integer using (ℤ)
   renaming (_+_ to _Z+_; _-_ to _Z-_; _*_ to _Z*_; _≤_ to _Z≤_)
 open import Data.Product renaming (Σ to PΣ)
 open import Data.String using (String; _≟_)
+open import Data.Sum using (_⊎_)
+open import Data.Unit using (Unit)
 open import Relation.Nullary using (¬_; yes; no)
 open import Relation.Binary.PropositionalEquality renaming (_≡_ to _P≡_)
 
@@ -174,6 +176,7 @@ data Assn : Set where
   `∃_,_ : Var → Assn → Assn
   `∀_,_ : Var → Assn → Assn
 
+{-
 infix 0 _⊨_
 data _⊨_ : Σ → Assn → Set where
 
@@ -228,6 +231,19 @@ data _⊨_ : Σ → Assn → Set where
     (∀ n → σ <[ x ≔ n ] ⊨ a) →
     {----------------}
     σ ⊨ `∀ x , a
+-}
+
+infix 5 _⊨_
+_⊨_ : Σ → Assn → Set
+σ ⊨ true     = Unit
+σ ⊨ `B x     = EvalBexp.< x , σ >⇓ true
+σ ⊨ a ≡ b    = ∃ (λ n1 → ∃ (λ n2 → (EvalAexp.< a , σ >⇓ n1) × (EvalAexp.< b , σ >⇓ n2) × (n1 P≡ n2)))
+σ ⊨ a ≤ b    = ∃ (λ n1 → ∃ (λ n2 → (EvalAexp.< a , σ >⇓ n1) × (EvalAexp.< b , σ >⇓ n2) × (n1 Z≤ n2)))
+σ ⊨ a & b    = σ ⊨ a × σ ⊨ b
+σ ⊨ a ∥ b    = σ ⊨ a ⊎ σ ⊨ b
+σ ⊨ a `⇒ b   = σ ⊨ a → σ ⊨ b
+σ ⊨ `∃ x , a = ∃ (λ n → σ <[ x ≔ n ] ⊨ a)
+σ ⊨ `∀ x , a = ∀ n → σ <[ x ≔ n ] ⊨ a
 
 ⊨⟨_⟩_⟨_⟩ : Assn → Cmd → Assn → Set
 ⊨⟨ A ⟩ c ⟨ B ⟩ = ∀ σ → σ ⊨ A → ∀ σ' → EvalCmd.< c , σ >⇓ σ' → σ' ⊨ B
@@ -235,7 +251,8 @@ data _⊨_ : Σ → Assn → Set where
 ⊨[_]_[_] : Assn → Cmd → Assn → Set
 ⊨[ A ] c [ B ] = ∀ σ → σ ⊨ A → ∃ (λ σ' → (EvalCmd.< c , σ >⇓ σ') × (σ' ⊨ B))
 
-data _⇒_ : Assn → Assn → Set where
+_⇒_ : Assn → Assn → Set
+A ⇒ B = ∀ σ → σ ⊨ A → σ ⊨ B
 
 data ⊢⟨_⟩_⟨_⟩ : Assn → Cmd → Assn → Set where
 
