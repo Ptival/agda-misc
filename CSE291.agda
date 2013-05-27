@@ -134,8 +134,8 @@ module EvalBexp where
 
 _<[_≔_] : Σ → Var → ℤ → Σ
 (σ <[ x ≔ n ]) y with x ≟ y
-... | yes p = n
-... | no  p = σ y
+... | yes _ = n
+... | no  _ = σ y
 
 module EvalCmd where
 
@@ -254,6 +254,45 @@ _⊨_ : Σ → Assn → Set
 _⇒_ : Assn → Assn → Set
 A ⇒ B = ∀ σ → σ ⊨ A → σ ⊨ B
 
+module SubstAexp where
+
+  _[_/_] : Aexp → Aexp → Var → Aexp
+  AI n    [ e / x ] = AI n
+  AL v    [ e / x ] with v ≟ x
+  ... | yes _ = e
+  ... | no  _ = AL v
+  (a + b) [ e / x ] = (a [ e / x ]) + (b [ e / x ])
+  (a - b) [ e / x ] = (a [ e / x ]) - (b [ e / x ])
+  (a * b) [ e / x ] = (a [ e / x ]) * (b [ e / x ])
+
+module SubstBexp where
+
+  _[_/_] : Bexp → Aexp → Var → Bexp
+  true    [ e / x ] = true
+  false   [ e / x ] = false
+  (a ≡ b) [ e / x ] = a SubstAexp.[ e / x ] ≡ b SubstAexp.[ e / x ]
+  (a ≤ b) [ e / x ] = a SubstAexp.[ e / x ] ≤ b SubstAexp.[ e / x ]
+  (! b)   [ e / x ] = ! (b [ e / x ])
+  (a ∥ b) [ e / x ] = a [ e / x ] ∥ b [ e / x ]
+  (a & b) [ e / x ] = a [ e / x ] & b [ e / x ]
+
+module SubstAssn where
+
+  _[_/_] : Assn → Aexp → Var → Assn
+  true       [ e / x ] = true
+  `B b       [ e / x ] = `B (b SubstBexp.[ e / x ])
+  (a ≡ b)    [ e / x ] = (a SubstAexp.[ e / x ]) ≡ (b SubstAexp.[ e / x ])
+  (a ≤ b)    [ e / x ] = (a SubstAexp.[ e / x ]) ≤ (b SubstAexp.[ e / x ])
+  (A & B)    [ e / x ] = (A [ e / x ]) & (B [ e / x ])
+  (A ∥ B)    [ e / x ] = (A [ e / x ]) ∥ (B [ e / x ])
+  (A `⇒ B)   [ e / x ] = (A [ e / x ]) `⇒ (B [ e / x ])
+  (`∃ y , A) [ e / x ] with y ≟ x
+  ... | yes _ = `∃ y , A
+  ... | no  _ = `∃ y , A [ e / x ]
+  (`∀ y , A) [ e / x ] with y ≟ x
+  ... | yes _ = `∀ y , A
+  ... | no  _ = `∀ y , A [ e / x ]
+
 data ⊢⟨_⟩_⟨_⟩ : Assn → Cmd → Assn → Set where
 
   ⊢consequence : ∀ A A' B B' c →
@@ -285,6 +324,7 @@ data ⊢⟨_⟩_⟨_⟩ : Assn → Cmd → Assn → Set where
     {-------------------------------}
     ⊢⟨ A ⟩ while b do c ⟨ A & `B (! b) ⟩
 
-{- TODO:
-  ⊢≔ : ∀ A b c →
--}
+  ⊢≔ : ∀ A e x →
+
+    {------------------------------------}
+    ⊢⟨ A SubstAssn.[ e / x ] ⟩ x ≔ e ⟨ A ⟩
